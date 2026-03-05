@@ -1,0 +1,4 @@
+apiVersion: v2
+name: etl-chart
+description: "Project k8s ETL orchestrator"
+version: 0.1.0

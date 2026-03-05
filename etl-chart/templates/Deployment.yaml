@@ -1,0 +1,41 @@
+# templates/deployment.yaml
+{{- range .Values.pods }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}
+  labels:
+    app: etl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+    spec:
+      containers:
+      - name: etl-container
+        image: 192.168.0.21:30500/etl-app:3.0.0
+        imagePullPolicy: Always
+        env:
+        - name: HTTP_PROXY
+          value: {{ $.Values.global.httpProxy | quote }}
+        - name: AWS_DEFAULT_REGION
+          value: {{ $.Values.global.awsDefault | quote }}
+        - name: BKTNAME
+          value: {{ .bktName | quote }}
+        - name: DBNAME
+          value: {{ .dbName | quote }}
+        volumeMounts:
+        - name: log-volume
+          mountPath: /app/logs
+      volumes:
+      - name: log-volume
+        hostPath:
+          path: /tmp/logs/{{ .name }}
+---
+{{- end }}
