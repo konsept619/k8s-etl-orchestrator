@@ -5,32 +5,52 @@ pods:
   - name: etl1
     bktName: mock-aws-bucket-data-groupA
     dbName: db_groupA
+    secretName: groupa-mock-key
+    vaultKey: integration/etl/groupa
   - name: etl2
     bktName: mock-aws-bucket-data-groupA
     dbName: db_groupA
+    secretName: groupa-mock-key
+    vaultKey: integration/etl/groupa
   - name: etl3
     bktName: mock-aws-bucket-data-groupA
     dbName: db_groupA
+    secretName: groupa-mock-key
+    vaultKey: integration/etl/groupa
   - name: etl4 
     bktName: mock-aws-bucket-data-groupA
     dbName: db_groupA
+    secretName: groupa-mock-key
+    vaultKey: integration/etl/groupa
   - name: etl5
     bktName: mock-aws-bucket-data-groupA
     dbName: db_groupA
+    secretName: groupa-mock-key
+    vaultKey: integration/etl/groupa
   - name: etl6
     bktName: mock-aws-bucket-data-groupB
     dbName: db_groupB
+    secretName: groupb-mock-key
+    vaultKey: integration/etl/groupb
   - name: etl7
     bktName: mock-aws-bucket-NEW_MOCK
     dbName: db_group_NEW_DBNAME
+    secretName: groupc-mock-key
+    vaultKey: integration/etl/groupc
   - name: etl8
     bktName: mock-aws-bucket-data-groupD
     dbName: db_groupD
+    secretName: groupd-mock-key
+    vaultKey: integration/etl/groupd
   - name: etl9
     bktName: mock-aws-bucket-data-groupE
     dbName: db_groupE
+    secretName: groupe-mock-key
+    vaultKey: integration/etl/groupe
   - name: etl10
     bktName: mock-aws-bucket-data-groupF
     dbName: db_groupF
+    secretName: groupf-mock-key
+    vaultKey: integration/etl/groupf
 
   

@@ -5,6 +5,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
   labels:
     app: etl
 spec:
@@ -14,7 +15,6 @@ spec:
       app: {{ .name }}
   template:
     metadata:
-      namespace: {{ $.Release.Namespace }}
       labels:
         app: {{ .name }}
       annotations: 
@@ -35,9 +35,11 @@ spec:
           value: {{ .bktName | quote }}
         - name: DBNAME
           value: {{ .dbName | quote }}
-        envFrom:
-        - secretRef:
-            name: etl-app
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .secretName }}
+              key: secret_key
         volumeMounts:
         - name: log-volume
           mountPath: /app/logs
