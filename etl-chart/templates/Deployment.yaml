@@ -14,9 +14,14 @@ spec:
       app: {{ .name }}
   template:
     metadata:
+      namespace: {{ $.Release.Namespace }}
       labels:
         app: {{ .name }}
+      annotations: 
+        reloader.stakater.com/auto: "true"
+        reloader.stakater.com/rollout-strategy: "restart"
     spec:
+      serviceAccountName: etl-sa
       containers:
       - name: etl-container
         image: 192.168.0.21:30500/etl-app:3.0.0
@@ -30,6 +35,9 @@ spec:
           value: {{ .bktName | quote }}
         - name: DBNAME
           value: {{ .dbName | quote }}
+        envFrom:
+        - secretRef:
+            name: etl-app
         volumeMounts:
         - name: log-volume
           mountPath: /app/logs
