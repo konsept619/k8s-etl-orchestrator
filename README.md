@@ -13,6 +13,7 @@ kubectl create namespace vault
 ```
 Create vault configuration
 ```yaml
+#vault-values.yaml
 server:
   enabled: true
   image:
@@ -93,5 +94,20 @@ Verify if Vault is exposed:
 ```bash
 kubectl run curl-test --rm -it --restart=Never --image=curlimages/curl -n external-secrets -- \
   curl -s http://vault.vault.svc:8200/v1/sys/health
+```
 
+### Enable KV engine and put some secrets
+```bash
+kubectl exec -it -n vault vault-0 -- sh
+vault login <ROOT_KEY>
+
+vault secrets enable -path=secret kv-v2
+
+vault kv put secret/integration/etl-app \
+  db_password='SuperStrongPassword123!' \
+  aws_default_region='eu-central-1' \
+  http_proxy='http://proxy.internal:3128'
+
+vault kv get secret/integration/etl-app
+exit
 ```
