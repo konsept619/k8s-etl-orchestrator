@@ -178,5 +178,39 @@ vault write auth/kubernetes/role/etl-eso-role \
   policies=etl-eso-policy \
   ttl=1h
 exit
+```
 
+### Install External Secrets Operator
+```bash
+helm repo add external-secrets https://charts.external-secrets.io
+helm repo update
+
+helm install external-secrets external-secrets/external-secrets \
+  -n external-secrets
+```
+
+### Connect ESO to Vault 
+Create _clustersecretstore-vault.yaml_
+```bash
+apiVersion: external-secrets.io/v1
+kind: ClusterSecretStore
+metadata:
+  name: vault-backend
+spec:
+  provider:
+    vault:
+      server: "http://vault.vault.svc:8200"
+      path: "secret"
+      version: "v2"
+      auth:
+        kubernetes:
+          mountPath: "kubernetes"
+          role: "etl-eso-role"
+          serviceAccountRef:
+            name: "external-secrets"
+            namespace: "external-secrets"
+```
+And apply it:
+```bash
+kubectl apply -f clustersecretstore-vault.yaml
 ```
