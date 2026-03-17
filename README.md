@@ -111,3 +111,72 @@ vault kv put secret/integration/etl-app \
 vault kv get secret/integration/etl-app
 exit
 ```
+
+### Create Kubernetes auth for Vault
+```bash
+kubectl create namespace vault-auth || true
+kubectl create serviceaccount vault-auth -n vault-auth || true
+
+kubectl create clusterrolebinding vault-auth-binding \
+  --clusterrole=system:auth-delegator \
+  --serviceaccount=vault-auth:vault-auth
+```
+
+Setup these variables:
+```bash
+SA_JWT_TOKEN=$(kubectl create token vault-auth -n vault-auth)
+K8S_HOST="https://kubernetes.default.svc:443"
+SA_CA_CRT=$(kubectl get secret -n vault $(kubectl get sa default -n vault -o jsonpath='{.secrets[0].name}') -o jsonpath="{.data.ca\.crt}" | base64 -d)
+```
+Konfigure Vault
+```bash
+kubectl exec -it -n vault vault-0 -- sh
+vault login <ROOT_KEY>
+
+vault auth enable kubernetes
+
+vault write auth/kubernetes/config \
+  token_reviewer_jwt="$SA_JWT_TOKEN" \
+  kubernetes_host="$K8S_HOST" \
+  kubernetes_ca_cert="$SA_CA_CRT"
+exit
+
+```
+
+### Create Vault policy and role for ESO
+
+It's advised to create separate namespace for ESO
+```bash
+kubectl create namespace external-secrets
+```
+
+Create policy file _etl-eso-policy.hcl_
+```bash
+#etl-eso-policy.hcl
+path "secret/data/integration/etl-app" {
+  capabilities = ["read"]
+}
+
+path "secret/metadata/integration/etl-app" {
+  capabilities = ["read", "list"]
+}
+
+```
+
+Copy created policy and create role:
+```bash
+kubectl cp etl-eso-policy.hcl vault/$(kubectl get pod -n vault -l app.kubernetes.io/name=vault -o jsonpath='{.items[0].metadata.name}'):/tmp/etl-eso-policy.hcl
+
+kubectl exec -it -n vault vault-0 -- sh
+vault login <ROOT_KEY>
+
+vault policy write etl-eso-policy /tmp/etl-eso-policy.hcl
+
+vault write auth/kubernetes/role/etl-eso-role \
+  bound_service_account_names=external-secrets \
+  bound_service_account_namespaces=external-secrets \
+  policies=etl-eso-policy \
+  ttl=1h
+exit
+
+```
