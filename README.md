@@ -14,55 +14,39 @@ kubectl create namespace vault
 Create vault configuration
 ```yaml
 #vault-values.yaml
-server:
+global:
   enabled: true
-  image:
-    repository: "hashicorp/vault"
-  resources:
-    requests:
-      cpu: "250m"
-      memory: "512Mi"
-    limits:
-      cpu: "1000m"
-      memory: "1Gi"
+  tlsDisable: true
+
+injector:
+  enabled: false
+
+server:
+  standalone:
+    enabled: true
+    config: |
+      ui = true
+
+      listener "tcp" {
+        address = "[::]:8200"
+        cluster_address = "[::]:8201"
+        tls_disable = 1
+      }
+
+      storage "file" {
+        path = "/vault/data"
+      }
+
+  ha:
+    enabled: false
 
   dataStorage:
     enabled: true
     size: 10Gi
     storageClass: local-path
 
-  auditStorage:
-    enabled: false
-
-  standalone:
-    enabled: false
-
-  ha:
-    enabled: true
-    replicas: 3
-    raft:
-      enabled: true
-      setNodeId: true
-      config: |
-        ui = true
-
-        listener "tcp" {
-          tls_disable = 1
-          address = "[::]:8200"
-          cluster_address = "[::]:8201"
-        }
-
-        storage "raft" {
-          path = "/vault/data"
-        }
-
-        service_registration "kubernetes" {}
-
 ui:
   enabled: true
-
-injector:
-  enabled: false
 ```
 Install Vault:
 
