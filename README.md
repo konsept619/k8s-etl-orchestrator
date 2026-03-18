@@ -1,6 +1,7 @@
 # k8-etl-orchestrator
 ## Table of Contents
 - [Abstract](#abstract)
+- [Security Disclaimer](#security-disclaimer)
 - [Repository Structure](#repository-structure)
 - [Installation](#installation)
   - [1. Deploy Vault](#1-deploy-vault-on-cluster)
@@ -15,7 +16,10 @@
   - [10. Update Helm chart](#10-update-helm-chart)
 
 ## Abstract
-There are 10 containers, that require cyclic maintenance. All of them have the same (from logic point of view) goal, but 5 of them are using very similar configuration unlike the rest of them which are operating on completely different variables and settings. 
+There are 10 containers, that require cyclic maintenance. All of them have the same (from logic point of view) goal, but 5 of them are using very similar configuration unlike the rest of them which are operating on completely different variables and settings. With provided solutions, every change regarding credentials is detected and forces a reboot of affected pods. Non-sensitive data is stored in _values.yaml_ but secrets are meant to be stored in Vault.  
+
+## Security Disclaimer
+Currently, there are some workarounds that can affect security in production. The solution is supposed to show more robust and secure approach to secrets and variable management in small environemnt, but it's isn't flaweless yet. E.g. right now Vault doesn't require encrypted conenctions: ```tlsDisable =  true```. Moreover the key rotation rules and Vault access wasn't specified and properly "sealed", keep that in mind while implementing.
 
 ## Repository Structure
 ```text
