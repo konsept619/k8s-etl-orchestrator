@@ -2,6 +2,25 @@
 ## Abstract
 There are 10 containers, that require cyclic maintenance. All of them have the same (from logic point of view) goal, but 5 of them are using very similar configuration unlike the rest of them which are operating on completely different variables and settings. 
 
+## Repository Structure
+```text
+├── .gitignore
+├── README.md
+├── app
+|     ├── Dockerfile
+|     ├── app.py
+├── clustersecretstore-vault.yaml
+├── etl-chart
+|     ├── Chart.yaml
+|     ├── templates
+|     |     ├── Deployment.yaml
+|     |     ├── etl-app-externalsecret.yaml
+|     ├── values.yaml
+├── etl-eso-policy.hcl
+├── vault-values.yaml
+
+```
+
 ## Installation
 ### Deploy Vault on cluster
 Prepare a Helm repo and a namespace
