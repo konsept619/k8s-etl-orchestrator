@@ -1,4 +1,19 @@
 # k8-etl-orchestrator
+## Table of Contents
+- [Abstract](#abstract)
+- [Repository Structure](#repository-structure)
+- [Installation](#installation)
+  - [1. Deploy Vault](#1-deploy-vault-on-cluster)
+  - [2. Initialize and unseal Vault](#2-initialize-and-unseal-vault)
+  - [3. Enable KV engine and put some secrets](#3-enable-kv-engine-and-put-some-secrets)
+  - [4. Create Kubernetes auth for Vault](#4-create-kubernetes-auth-for-vault)
+  - [5. Create Vault policy and role for ESO](#5-create-vault-policy-and-role-for-eso)
+  - [6. Install External Secrets Operator](#6-install-external-secrets-operator)
+  - [7. Connect ESO to Vault ](#7-connect-eso-to-vault)
+  - [8. Create the synced Secret in desired namespace ](#8-create-the-synced-secret-in-desired-namespace)
+  - [9. Install Reloader for automatic restarts](#9-install-reloader-for-automatic-restarts)
+  - [10. Update Helm chart](#10-update-helm-chart)
+
 ## Abstract
 There are 10 containers, that require cyclic maintenance. All of them have the same (from logic point of view) goal, but 5 of them are using very similar configuration unlike the rest of them which are operating on completely different variables and settings. 
 
@@ -22,7 +37,7 @@ There are 10 containers, that require cyclic maintenance. All of them have the s
 ```
 
 ## Installation
-### Deploy Vault on cluster
+### 1. Deploy Vault on cluster
 Prepare a Helm repo and a namespace
 ```bash
 helm repo add hashicorp https://helm.releases.hashicorp.com
@@ -72,7 +87,7 @@ Install Vault:
 ```bash
 helm install vault hashicorp/vault -n vault -f vault-values.yaml
 ```
-### Initialize and unseal Vault
+### 2. Initialize and unseal Vault
 Initialization:
 ```bash
 kubectl exec -n vault vault-0 -- vault operator init -key-shares=1 -key-threshold=1
@@ -99,7 +114,7 @@ kubectl run curl-test --rm -it --restart=Never --image=curlimages/curl -n extern
   curl -s http://vault.vault.svc:8200/v1/sys/health
 ```
 
-### Enable KV engine and put some secrets
+### 3. Enable KV engine and put some secrets
 ```bash
 kubectl exec -it -n vault vault-0 -- sh
 vault login <ROOT_KEY>
@@ -115,7 +130,7 @@ vault kv get secret/integration/etl-app
 exit
 ```
 
-### Create Kubernetes auth for Vault
+### 4. Create Kubernetes auth for Vault
 ```bash
 kubectl create namespace vault-auth || true
 kubectl create serviceaccount vault-auth -n vault-auth || true
@@ -131,7 +146,7 @@ SA_JWT_TOKEN=$(kubectl create token vault-auth -n vault-auth)
 K8S_HOST="https://kubernetes.default.svc:443"
 SA_CA_CRT=$(kubectl get secret -n vault $(kubectl get sa default -n vault -o jsonpath='{.secrets[0].name}') -o jsonpath="{.data.ca\.crt}" | base64 -d)
 ```
-Konfigure Vault
+Configure Vault
 ```bash
 kubectl exec -it -n vault vault-0 -- sh
 vault login <ROOT_KEY>
@@ -146,7 +161,7 @@ exit
 
 ```
 
-### Create Vault policy and role for ESO
+### 5. Create Vault policy and role for ESO
 
 It's advised to create separate namespace for ESO
 ```bash
@@ -183,7 +198,7 @@ vault write auth/kubernetes/role/etl-eso-role \
 exit
 ```
 
-### Install External Secrets Operator
+### 6. Install External Secrets Operator
 ```bash
 helm repo add external-secrets https://charts.external-secrets.io
 helm repo update
@@ -192,7 +207,7 @@ helm install external-secrets external-secrets/external-secrets \
   -n external-secrets
 ```
 
-### Connect ESO to Vault 
+### 7. Connect ESO to Vault 
 Create _clustersecretstore-vault.yaml_
 ```bash
 apiVersion: external-secrets.io/v1
@@ -218,7 +233,7 @@ And apply it:
 kubectl apply -f clustersecretstore-vault.yaml
 ```
 
-### Create the synced Secret in desired namespace 
+### 8. Create the synced Secret in desired namespace 
 For this use case I used namespace _integration_.
 Creating namespace and ServiceAccount:
 ```bash
@@ -260,7 +275,7 @@ Apply it:
 kubectl apply -f etl-app-externalsecret.yaml
 ```
 
-### Install Reloader for automatic restarts
+### 9. Install Reloader for automatic restarts
 ```bash
 helm repo add stakater https://stakater.github.io/stakater-charts
 helm repo update
@@ -269,7 +284,7 @@ kubectl create namespace reloader
 helm install reloader stakater/reloader -n reloader
 ```
 
-### Update Helm chart
+### 10. Update Helm chart
 ```bash
 #deployment.yaml
 # templates/deployment.yaml
