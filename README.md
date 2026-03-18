@@ -214,3 +214,120 @@ And apply it:
 ```bash
 kubectl apply -f clustersecretstore-vault.yaml
 ```
+
+### Create the synced Secret in desired namespace 
+For this use case I used namespace _integration_.
+Creating namespace and ServiceAccount:
+```bash
+kubectl create namespace integration
+kubectl create serviceaccount etl-sa -n integration 
+```
+Then create ExternalSecrets which will be updating or creating a K8s Secret from Vault data.
+
+```bash
+#etl-app-externalsecret.yaml
+{{- $seen := dict }}
+{{- range .Values.pods }}
+{{- if not (hasKey $seen .secretName) }}
+{{- $_ := set $seen .secretName true }}
+---
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: {{ .secretName }}
+  namespace: {{ $.Release.Namespace }}
+spec:
+  refreshInterval: 1m
+  secretStoreRef:
+    name: vault-backend
+    kind: ClusterSecretStore
+  target:
+    name: {{ .secretName }}
+    creationPolicy: Owner
+  data:
+    - secretKey: secret_key
+      remoteRef:
+        key: {{ .vaultKey | quote }}
+        property: secret_key
+{{- end }}
+{{- end }}
+```
+Apply it:
+```bash
+kubectl apply -f etl-app-externalsecret.yaml
+```
+
+### Install Reloader for automatic restarts
+```bash
+helm repo add stakater https://stakater.github.io/stakater-charts
+helm repo update
+
+kubectl create namespace reloader
+helm install reloader stakater/reloader -n reloader
+```
+
+### Update Helm chart
+```bash
+#deployment.yaml
+# templates/deployment.yaml
+{{- range .Values.pods }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: etl
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .name }}
+      annotations: 
+        reloader.stakater.com/auto: "true"
+        reloader.stakater.com/rollout-strategy: "restart"
+    spec:
+      serviceAccountName: etl-sa
+      containers:
+      - name: etl-container
+        image: 192.168.0.21:30500/etl-app:3.0.0
+        imagePullPolicy: Always
+        env:
+        - name: HTTP_PROXY
+          value: {{ $.Values.global.httpProxy | quote }}
+        - name: AWS_DEFAULT_REGION
+          value: {{ $.Values.global.awsDefault | quote }}
+        - name: BKTNAME
+          value: {{ .bktName | quote }}
+        - name: DBNAME
+          value: {{ .dbName | quote }}
+        - name: SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: {{ .secretName }}
+              key: secret_key
+        volumeMounts:
+        - name: log-volume
+          mountPath: /app/logs
+      volumes:
+      - name: log-volume
+        hostPath:
+          path: /tmp/logs/{{ .name }}
+---
+{{- end }}
+```
+
+You also have to create _values.yaml_ to store your variables.
+
+Then deploy configuratrion into desired namespace:
+```bash
+helm upgrade --install etl-app ./etl-chart -n integration
+```
+
+
+
