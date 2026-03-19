@@ -19,7 +19,7 @@
 There are 10 containers, that require cyclic maintenance. All of them have the same (from logic point of view) goal, but 5 of them are using very similar configuration unlike the rest of them which are operating on completely different variables and settings. With provided solutions, every change regarding credentials is detected and forces a reboot of affected pods. Non-sensitive data is stored in _values.yaml_ but secrets are meant to be stored in Vault.  
 
 ## Security Disclaimer
-Currently, there are some workarounds that can affect security in production. The solution is supposed to show more robust and secure approach to secrets and variable management in small environemnt, but it's isn't flaweless yet. E.g. right now Vault doesn't require encrypted conenctions: ```tlsDisable =  true```. Moreover the key rotation rules and Vault access wasn't specified and properly "sealed", keep that in mind while implementing.
+There are currently several workarounds that may impact security in a production environment. The goal of this solution is to demonstrate a more robust and secure approach to secrets and configuration management in small environments, but it is not yet flawless. For example, Vault is currently configured without encrypted connections (tlsDisable = true). Additionally, key rotation policies and proper Vault access controls (including sealing procedures) have not yet been fully defined. Please keep these limitations in mind during implementation.
 
 ## Repository Structure
 ```text
